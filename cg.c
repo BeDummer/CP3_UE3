@@ -129,6 +129,24 @@ void print_vector(char *name, double *p, int flag)
    printf("||%s|| = %.8f\n",name,sqrt(nrm));
 }
 
+void laplace_2d(double *w, double *v)
+{
+}
+
+double vec_scalar(double *w, double *v)
+{
+	double scalar = 0;
+	for (i=0; i<Nx+2; i++)
+		scalar += w[i]*v[i];
+	return scalar;
+}
+
+void vec_add(double *w, double *v, double *sum)
+{
+	for (i=0; i<Nx+2; i++)
+		sum[i] = w[i] + v[i];
+}
+
 int main(int argc, char **argv)
 {
    printf("%s Starting...\n", argv[0]);

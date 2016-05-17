@@ -163,6 +163,13 @@ void vec_mult(double *w, double a)
 		w[i] = a*w[i];
 }
 
+void init_vec(double *w)
+{
+	int i;
+	for (i=0;i<npts;i++)
+		w[i] = 0.0;
+}
+
 int main(int argc, char **argv)
 {
    printf("%s Starting...\n", argv[0]);
@@ -203,6 +210,10 @@ int main(int argc, char **argv)
    print_vector("v",v,1);
 
   // Vector w
+	init_vec(w);
+	print_vector("w",w,1);
+
+	laplace_2d(w,v);
 	print_vector("w",w,1);
 
    free(active);

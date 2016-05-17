@@ -2,6 +2,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <cuda_runtime.h>
+#include "common.h"
+
+// Macro zur Fehlerauswertung (CUDA)
+#define CHECK(call)                                                            \
+{                                                                              \
+    const cudaError_t error = call;                                            \
+    if (error != cudaSuccess)                                                  \
+    {                                                                          \
+        fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);                 \
+        fprintf(stderr, "code: %d, reason: %s\n", error,                       \
+                cudaGetErrorString(error));                                    \
+        exit(1);                                                               \
+    }                                                                          \
+}
 
 /*
    Globale Variablen stehen in allen Funktionen zur Verfuegung.
@@ -129,7 +144,7 @@ void print_vector(char *name, double *p, int flag)
    printf("||%s|| = %.8f\n",name,sqrt(nrm));
 }
 
-void laplace_2d(double *w, double *v)
+__global__ void laplace_2d(double *w, double *v)
 {
 	int i,j;
 	for (i=1; i<Nx+1; i++)
@@ -149,7 +164,7 @@ double vec_scalar(double *w, double *v)
 	return scalar;
 }
 
-void vec_add(double *sum, double *w, double a, double *v)
+__global__ void vec_add(double *sum, double *w, double a, double *v)
 {
 	int i;
 	for (i=0; i<npts; i++)
@@ -187,11 +202,19 @@ int main(int argc, char **argv)
    x=(double*)malloc(npts*sizeof(double));
    v=(double*)malloc(npts*sizeof(double));
    r=(double*)malloc(npts*sizeof(double));
+ 
    // auf Null setzen
    memset(s, 0, nBytes);
    memset(x, 0, nBytes);
    memset(v, 0, nBytes);
 
+   // Speicher auf GPU allozieren
+   double *s_gpu, *x_gpu, *v_gpu, *r_gpu;
+   CHECK(cudaMalloc((double**)&s_gpu, nBytes));
+   CHECK(cudaMalloc((double**)&x_gpu, nBytes));
+   CHECK(cudaMalloc((double**)&v_gpu, nBytes));
+   CHECK(cudaMalloc((double**)&r_gpu, nBytes));
+   
    // Aktive Punkte ausgeben
    if ((Nx<=16)&&(Ny<=16))
       print_active();
@@ -205,7 +228,7 @@ int main(int argc, char **argv)
    print_vector("v",v,1);
 
   // Nullter Iterationsschritt
-	laplace_2d(s,v);
+	laplace_2d<<<1,(Nx+2,Ny+2)>>>(s,v);
 	print_vector("s",s,1); // Ausgabe fuer Aufgabe 3.1.1
 	
 	rnorm_alt = norm_sqr(v);

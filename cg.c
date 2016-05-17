@@ -202,6 +202,9 @@ int main(int argc, char **argv)
    random_vector(v);
    print_vector("v",v,1);
 
+  // Vector w
+	print_vector("w",w,1);
+
    free(active);
    free(w);
    free(v);

@@ -149,11 +149,11 @@ double vec_scalar(double *w, double *v)
 	return scalar;
 }
 
-void vec_add(double *w, double a, double *v)
+void vec_add(double *sum, double *w, double a, double *v)
 {
 	int i;
 	for (i=0; i<npts; i++)
-		w[i] += a*v[i];
+		sum[i] = w[i] + a*v[i];
 }
 
 int main(int argc, char **argv)
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
    printf("%s Starting...\n", argv[0]);
 
    int nBytes, k, kmax;
-   double *w, *v, *r;
+   double *s, *v, *x, *r;
    double tol;
    double rnorm, rnorm_alt, alpha, beta;
 
@@ -180,13 +180,15 @@ int main(int argc, char **argv)
    // Toleranz & Iterationsgrenze festlegen
    tol = 1e-6;
    kmax = 1e3;
-
+   k = 0;
    // Speicher für Vektoren allozieren
-   w=(double*)malloc(npts*sizeof(double));
+   s=(double*)malloc(npts*sizeof(double));
+   x=(double*)malloc(npts*sizeof(double));
    v=(double*)malloc(npts*sizeof(double));
    r=(double*)malloc(npts*sizeof(double));
    // auf Null setzen
-   memset(w, 0, nBytes);
+   memset(s, 0, nBytes);
+   memset(x, 0, nBytes);
    memset(v, 0, nBytes);
 
    // Aktive Punkte ausgeben
@@ -202,22 +204,37 @@ int main(int argc, char **argv)
    print_vector("v",v,1);
 
   // Vector w
-	print_vector("w",w,1);
+	print_vector("s",s,1);
 
-	laplace_2d(w,v);
-	print_vector("w",w,1);
-	alpha = norm_sqr(v)/vec_scalar(w,v);
-	vec_add()
-
+	laplace_2d(s,v);
+	print_vector("s",s,1);
+	
+	rnorm_alt = norm_sqr(v);
+	alpha = rnorm_alt/vec_scalar(s,v);
+	vec_add(x,x,alpha,v);
+	vec_add(r,v,(-alpha),w);
+	rnorm = norm_sqr(v);
 
 	while (k<kmax || rnorm>tol)
 	{
+		beta = rnorm/rnorm_alt;
+		vec_add(v,r, beta,v);
 
+		rnorm_alt = rnorm;
+		laplace_2d(s,v);
+		alpha = vec_scalar(v,r)/vec_scalar(v,s);
+		vec_add(x,x,alpha,v);
+		vec_add(r,v,(-alpha),w);
+		rnorm = norm_sqr(v);
+
+		k++;
 	}
 
    free(active);
-   free(w);
+   free(s);
+   free(x);
    free(v);
+   free(r);
 
    return (0);
 }

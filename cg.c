@@ -131,11 +131,19 @@ void print_vector(char *name, double *p, int flag)
 
 void laplace_2d(double *w, double *v)
 {
+	int i,j;
+	for (i=1; i<Nx+1; i++)
+	{
+		for (j=1; j<Ny+1; j++)
+			w[coord2index(i,j)] = 4*v[coord2index(i,j)] - (v[coord2index(i-1,j)]+v[coord2index(i+1,j)]+v[coord2index(i,j-1)]+v[coord2index(i,j+1)]);
+	}
+
 }
 
 double vec_scalar(double *w, double *v)
 {
 	double scalar = .0;
+	int i;
 	for (i=1; i<Nx+1; i++)
 		scalar += w[i]*v[i];
 	return scalar;
@@ -143,12 +151,14 @@ double vec_scalar(double *w, double *v)
 
 void vec_add(double *w, double *v, double *sum)
 {
+	int i;
 	for (i=1; i<Nx+1; i++)
 		sum[i] = w[i] + v[i];
 }
 
 void vec_mult(double *w, double a)
 {
+	int i;
 	for (i=1; i<Nx+1; i++)
 		w[i] = a*w[i];
 }

@@ -181,7 +181,6 @@ int main(int argc, char **argv)
    tol = 1e-6;
    kmax = 1e3;
    k = 0;
-   
    // Speicher für Vektoren allozieren
    s=(double*)malloc(npts*sizeof(double));
    x=(double*)malloc(npts*sizeof(double));
@@ -205,8 +204,10 @@ int main(int argc, char **argv)
    print_vector("v",v,1);
 
   // Nullter Iterationsschritt
+	print_vector("s",s,1);
+
 	laplace_2d(s,v);
-	print_vector("s",s,1); // Ausgabe fuer Aufgabe 3.1.1
+	print_vector("s",s,1);
 	
 	rnorm_alt = norm_sqr(v);
 	alpha = rnorm_alt/vec_scalar(s,v);
@@ -214,12 +215,12 @@ int main(int argc, char **argv)
 	vec_add(r,v,(-alpha),s);
 	rnorm = norm_sqr(v);
 
-//test	print_vector("x",x,1);
+	print_vector("x",x,1);
 
    // Iteration
 	while (k<kmax && rnorm>tol)
 	{
-//test		printf("Norm: %.4f \n",rnorm);
+		printf("Norm: %.4f \n",rnorm);
 		beta = rnorm/rnorm_alt;
 		vec_add(v,r, beta,v);
 
@@ -232,8 +233,8 @@ int main(int argc, char **argv)
 
 		k++;
 	}
-   // Ausgabe Ergebnis
-	printf("Anzahl Iterationen: %d \n",k);
+   // Ausgabe x
+	printf("k = %d \n",k);
 	print_vector("x",x,1);
 
    free(active);

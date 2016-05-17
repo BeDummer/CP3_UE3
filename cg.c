@@ -215,9 +215,12 @@ int main(int argc, char **argv)
 	vec_add(r,v,(-alpha),s);
 	rnorm = norm_sqr(v);
 
+	print_vector("x",x,1);
+
    // Iteration
-	while (k<kmax || rnorm>tol)
+	while (k<kmax && rnorm>tol)
 	{
+		printf("Norm: %.4f \n",rnorm);
 		beta = rnorm/rnorm_alt;
 		vec_add(v,r, beta,v);
 
@@ -225,12 +228,13 @@ int main(int argc, char **argv)
 		laplace_2d(s,v);
 		alpha = vec_scalar(v,r)/vec_scalar(v,s);
 		vec_add(x,x,alpha,v);
-		vec_add(r,v,(-alpha),s);
-		rnorm = norm_sqr(v);
+		vec_add(r,r,(-alpha),s);
+		rnorm = norm_sqr(r);
 
 		k++;
 	}
    // Ausgabe x
+	printf("k = %d \n",k);
 	print_vector("x",x,1);
 
    free(active);

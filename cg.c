@@ -144,7 +144,7 @@ double vec_scalar(double *w, double *v)
 {
 	double scalar = .0;
 	int i;
-	for (i=1; i<Nx+1; i++)
+	for (i=0; i<npts; i++)
 		scalar += w[i]*v[i];
 	return scalar;
 }
@@ -152,14 +152,14 @@ double vec_scalar(double *w, double *v)
 void vec_add(double *w, double *v, double *sum)
 {
 	int i;
-	for (i=1; i<Nx+1; i++)
+	for (i=0; i<npts; i++)
 		sum[i] = w[i] + v[i];
 }
 
 void vec_mult(double *w, double a)
 {
 	int i;
-	for (i=1; i<Nx+1; i++)
+	for (i=0; i<npts; i++)
 		w[i] = a*w[i];
 }
 

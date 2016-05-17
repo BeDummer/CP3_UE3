@@ -149,26 +149,21 @@ double vec_scalar(double *w, double *v)
 	return scalar;
 }
 
-void vec_add(double *w, double *v, double *sum)
+void vec_add(double *w, double a, double *v)
 {
 	int i;
 	for (i=0; i<npts; i++)
-		sum[i] = w[i] + v[i];
-}
-
-void vec_mult(double *w, double a)
-{
-	int i;
-	for (i=0; i<npts; i++)
-		w[i] = a*w[i];
+		w[i] += a*v[i];
 }
 
 int main(int argc, char **argv)
 {
    printf("%s Starting...\n", argv[0]);
 
-   int nBytes;
-   double *w, *v;
+   int nBytes, k, kmax;
+   double *w, *v, *r;
+   double tol;
+   double rnorm, rnorm_alt, alpha, beta;
 
    // Globale Variablen setzen:
    // Anzahl der Inneren Punkte in x- und y-Richtung
@@ -181,6 +176,10 @@ int main(int argc, char **argv)
 
    // Speicherbedarf pro Vektor in Byte
    nBytes=npts*sizeof(double);
+
+   // Toleranz & Iterationsgrenze festlegen
+   tol = 1e-6;
+   kmax = 1e3;
 
    // Speicher für Vektoren allozieren
    w=(double*)malloc(npts*sizeof(double));
@@ -207,7 +206,14 @@ int main(int argc, char **argv)
 
 	laplace_2d(w,v);
 	print_vector("w",w,1);
+	alpha = norm_sqr(v)/vec_scalar(w,v);
+	vec_add()
 
+
+	while (k<kmax || rnorm>tol)
+	{
+
+	}
 
    free(active);
    free(w);

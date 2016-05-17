@@ -212,7 +212,7 @@ int main(int argc, char **argv)
 	rnorm_alt = norm_sqr(v);
 	alpha = rnorm_alt/vec_scalar(s,v);
 	vec_add(x,x,alpha,v);
-	vec_add(r,v,(-alpha),w);
+	vec_add(r,v,(-alpha),s);
 	rnorm = norm_sqr(v);
 
    // Iteration
@@ -225,7 +225,7 @@ int main(int argc, char **argv)
 		laplace_2d(s,v);
 		alpha = vec_scalar(v,r)/vec_scalar(v,s);
 		vec_add(x,x,alpha,v);
-		vec_add(r,v,(-alpha),w);
+		vec_add(r,v,(-alpha),s);
 		rnorm = norm_sqr(v);
 
 		k++;

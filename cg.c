@@ -203,7 +203,7 @@ int main(int argc, char **argv)
    random_vector(v);
    print_vector("v",v,1);
 
-  // Vector w
+  // Nullter Iterationsschritt
 	print_vector("s",s,1);
 
 	laplace_2d(s,v);
@@ -215,6 +215,7 @@ int main(int argc, char **argv)
 	vec_add(r,v,(-alpha),w);
 	rnorm = norm_sqr(v);
 
+   // Iteration
 	while (k<kmax || rnorm>tol)
 	{
 		beta = rnorm/rnorm_alt;
@@ -229,6 +230,8 @@ int main(int argc, char **argv)
 
 		k++;
 	}
+   // Ausgabe x
+	print_vector("x",x,1);
 
    free(active);
    free(s);

@@ -135,16 +135,22 @@ void laplace_2d(double *w, double *v)
 
 double vec_scalar(double *w, double *v)
 {
-	double scalar = 0;
-	for (i=0; i<Nx+2; i++)
+	double scalar = .0;
+	for (i=1; i<Nx+1; i++)
 		scalar += w[i]*v[i];
 	return scalar;
 }
 
 void vec_add(double *w, double *v, double *sum)
 {
-	for (i=0; i<Nx+2; i++)
+	for (i=1; i<Nx+1; i++)
 		sum[i] = w[i] + v[i];
+}
+
+void vec_mult(double *w, double a)
+{
+	for (i=1; i<Nx+1; i++)
+		w[i] = a*w[i];
 }
 
 int main(int argc, char **argv)

@@ -199,6 +199,11 @@ int main(int argc, char **argv)
    // Anzahl der Inneren Punkte in x- und y-Richtung
    Nx=8;
    Ny=8;
+   if (argc>1)
+   {
+     sscanf(argv[1],"%d",&Nx);
+     Ny = Nx;
+   }
    // Gesamtanzahl der Gitterpunkte
    npts=(Nx+2)*(Ny+2);
    // Aktive Punkte - Array
@@ -242,7 +247,7 @@ int main(int argc, char **argv)
 	double iStart = seconds();
 	laplace_2d(s,v);
 	const double time_laplace_host = seconds() - iStart; // Zeitmessung fuer 3.2
-	print_vector("s",s,1); // Ausgabe fuer Aufgabe 3.1.1
+	print_vector("s_host",s,1); // Ausgabe fuer Aufgabe 3.1.1
 	
 	rnorm_alt = norm_sqr(v);
 	alpha = rnorm_alt/vec_scalar(s,v);
@@ -273,7 +278,7 @@ int main(int argc, char **argv)
 	}
    // Ausgabe Ergebnis
    printf("Anzahl Iterationen: %d \n",k);
-   print_vector("x",x,1);
+   print_vector("x_Ergebnis",x,1);
 
    // auf Null setzen
    memset(s, 0, nBytes);
@@ -297,7 +302,7 @@ int main(int argc, char **argv)
      dim3 grid(((Nx+1+block.x)/block.x), ((Ny+1+block.y)/block.y));
    }
 
-   printf("Grid-Dim: %d x %d , Block-Dim: %d x %d \n", grid.x, grid.y,block.x,block.y);
+   printf("\n GPU-Berechnung\n Grid-Dim: %d x %d , Block-Dim: %d x %d \n", grid.x, grid.y,block.x,block.y);
    
    // GPU-Rechnungen fuer Aufgabe 3.2
    CHECK(cudaMemcpy(s_gpu, s, nBytes, cudaMemcpyHostToDevice));
@@ -318,10 +323,10 @@ int main(int argc, char **argv)
    CHECK(cudaGetLastError());
    
    CHECK(cudaMemcpy(s, s_gpu, nBytes, cudaMemcpyDeviceToHost));
-   print_vector("s",s,1);
+   print_vector("s_gpu",s,1);
    
-   printf("\n Speedup Laplace: %.4f \n",(time_laplace_host/time_laplace_gpu));
-   printf("Speedup Vec_add: %.4f \n",(time_vec_add_host/time_vec_add_gpu));
+   printf("\n Speedup Laplace: %.6f \n",(time_laplace_host/time_laplace_gpu));
+   printf(" Speedup Vec_add: %.6f \n",(time_vec_add_host/time_vec_add_gpu));
 
    // free device memory
    CHECK(cudaFree(s_gpu));

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <cuda_runtime.h>
+#include "common.h"
 
 /*
    Globale Variablen stehen in allen Funktionen zur Verfuegung.
@@ -129,15 +131,22 @@ void print_vector(char *name, double *p, int flag)
    printf("||%s|| = %.8f\n",name,sqrt(nrm));
 }
 
-void laplace_2d(double *w, double *v)
+__global__ void laplace_2d_gpu(double *w, double *v)
 {
-	int i,j;
+/*	int i,j;
 	for (i=1; i<Nx+1; i++)
 	{
 		for (j=1; j<Ny+1; j++)
 			w[coord2index(i,j)] = 4*v[coord2index(i,j)] - (v[coord2index(i-1,j)]+v[coord2index(i+1,j)]+v[coord2index(i,j-1)]+v[coord2index(i,j+1)]);
 	}
-
+*/
+	unsigned int ix = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int iy = threadIdx.y + blockIdx.y * blockDim.y;
+	if (ix>0 && ix<(Nx+1) && iy>0 && iy<(Ny+1))
+	{
+		unsigned int idx = iy*(blockDim.x * gridDim.x) + ix;
+		w[idx] = 4*v[idx] - (v[idx-1] + v[idx+1] + v[(idx-(gridDim.x*blockDim.x))] + v[(idx+(gridDim.x*blockDim.x))]);
+	}
 }
 
 double vec_scalar(double *w, double *v)
@@ -149,11 +158,19 @@ double vec_scalar(double *w, double *v)
 	return scalar;
 }
 
-void vec_add(double *sum, double *w, double a, double *v)
+__global__ void vec_add_gpu(double *sum, double *w, double a, double *v)
 {
-	int i;
+/*	int i;
 	for (i=0; i<npts; i++)
 		sum[i] = w[i] + a*v[i];
+*/	
+	unsigned int ix = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int iy = threadIdx.y + blockIdx.y * blockDim.y;
+	if (ix>0 && ix<(Nx+1) && iy>0 && iy<(Ny+1))
+	{
+		unsigned int idx = iy*(blockDim.x * gridDim.x) + ix;
+		sum[idx] = w[idx] + a*v[idx];
+	}
 }
 
 int main(int argc, char **argv)
@@ -187,11 +204,13 @@ int main(int argc, char **argv)
    x=(double*)malloc(npts*sizeof(double));
    v=(double*)malloc(npts*sizeof(double));
    r=(double*)malloc(npts*sizeof(double));
+ 
    // auf Null setzen
    memset(s, 0, nBytes);
    memset(x, 0, nBytes);
    memset(v, 0, nBytes);
-
+   memset(r, 0, nBytes);
+   
    // Aktive Punkte ausgeben
    if ((Nx<=16)&&(Ny<=16))
       print_active();
@@ -205,14 +224,18 @@ int main(int argc, char **argv)
    print_vector("v",v,1);
 
   // Nullter Iterationsschritt
+	double iStart = seconds();
 	laplace_2d(s,v);
+	const double time_laplace_host = seconds() - iStart; // Zeitmessung fuer 3.2
 	print_vector("s",s,1); // Ausgabe fuer Aufgabe 3.1.1
 	
 	rnorm_alt = norm_sqr(v);
 	alpha = rnorm_alt/vec_scalar(s,v);
 	vec_add(x,x,alpha,v);
+	iStart = seconds();
 	vec_add(r,v,(-alpha),s);
-	rnorm = norm_sqr(v);
+	const double time_vec_add_host = seconds() - iStart; // Zeitmessung fuer 3.2
+	rnorm = norm_sqr(r);
 
 //test	print_vector("x",x,1);
 
@@ -233,9 +256,52 @@ int main(int argc, char **argv)
 		k++;
 	}
    // Ausgabe Ergebnis
-	printf("Anzahl Iterationen: %d \n",k);
-	print_vector("x",x,1);
+   printf("Anzahl Iterationen: %d \n",k);
+   print_vector("x",x,1);
 
+   // auf Null setzen
+   memset(s, 0, nBytes);
+   memset(x, 0, nBytes);
+   memset(v, 0, nBytes);
+   memset(r, 0, nBytes);
+
+   random_vector(v);
+   
+   // Speicher auf GPU allozieren
+   __device__ double *s_gpu, *x_gpu, *v_gpu, *r_gpu;
+   CHECK(cudaMalloc((void**)&s_gpu, nBytes));
+   CHECK(cudaMalloc((void**)&x_gpu, nBytes));
+   CHECK(cudaMalloc((void**)&v_gpu, nBytes));
+   CHECK(cudaMalloc((void**)&r_gpu, nBytes));
+   
+   // GPU-Blocks vorbereiten
+   int bdim = 32;
+   dim3 block(bdim,bdim);
+   dim3 grid(ceil((Nx+2)/block.x), ceil((Ny+2)/block.y));
+
+   // GPU-Rechnungen fuer Aufgabe 3.2
+   CHECK(cudaMemcpy(s_gpu, s, nBytes, cudaMemcpyHostToDevice));
+   CHECK(cudaMemcpy(v_gpu, v, nBytes, cudaMemcpyHostToDevice));
+   CHECK(cudaMemcpy(r_gpu, r, nBytes, cudaMemcpyHostToDevice));
+
+   iStart = seconds();
+   laplace_2d_gpu<<<grid,block>>>(s,v);
+   const double time_laplace_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
+   
+   iStart = seconds();
+   vec_add_gpu<<<grid,block>>>(r,v,(-alpha),s);
+   const double time_vec_add_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
+   
+   printf("\n Speedup Laplace: %.4f \n",(time_laplace_host/time_laplace_gpu));
+   printf("Speedup Vec_add: %.4f \n",(time_vec_add_host/time_vec_add_gpu));
+
+   // free device memory
+   CHECK(cudaFree(s_gpu));
+   CHECK(cudaFree(x_gpu));
+   CHECK(cudaFree(v_gpu));	
+   CHECK(cudaFree(r_gpu));	
+
+   // free host memory
    free(active);
    free(s);
    free(x);

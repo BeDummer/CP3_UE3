@@ -1,0 +1,47 @@
+\documentclass[%
+	paper=A4,	% stellt auf A4-Papier
+	pagesize,	% gibt Papiergröße weiter
+	DIV=calc,	% errechnet Satzspiegel
+	smallheadings,	% kleinere Überschriften
+	ngerman		% neue Rechtschreibung
+]{scrartcl}
+\usepackage{BenMathTemplate}
+\usepackage{BenTextTemplate}
+
+\title{{\bf Wissenschaftliches Rechnen III / CP III}\\Übungsblatt 3}
+\author{Tizia Kaplan (545978)\\Benjamin Dummer (532716)}
+\date{18.05.2016}
+
+\begin{document}
+\maketitle
+\section*{Aufgabe 3.1}
+Die entsprechenden Funktionen wurden in der gegebenen Datei \url{cg.c} ergänzt. Zur Überprüfung der implementierten Funktion \url{laplace\_2d} wurde die Matlab-Routine \url{testlaplace.m} genutzt. Hier wurde der \glqq zufällige \grqq (aber immer gleiche) Vektor des C-Programms in die Matlab-Routine kopiert und die beiden Ergebnisse wurden verglichen. Es war festzustellen, dass die implementierte Funktion korrekt arbeitet.
+Ähnlich wurde für die Verifizierung der gesamten Methode vorgegangen. Hierfür wurde die Matlab-Routine \url{ue3_verify.m} genutzt. Wobei auch hier der Vektor des C-Programms in die Matlab-Routine kopiert wurde und die beiden Ergebnisse verglichen wurden. Auch die Methode der konjugierten Gradienten konnte korrekt implementiert werden.
+
+\section*{Aufgabe 3.2}
+In der beigefügten Datei \url{cg.cu} wurden die Kernel-Funktionen \url{laplace_2d_gpu} und \url{vec_add_gpu} für die (Host-)Funktionen \url{laplace_2d} und \url{vec_add} implementiert und eine Berechnung der Laufzeit durchgeführt. 
+
+Die Einteilung der Blockstruktur wurde in 2 Fälle geteilt:
+\begin{description}
+	\item[a) $N_x+2=N_y+2<32$: ] Das Programm bildet einen Block in Größe des Gitters. Die Größe ist in diesem Bereich frei wählbar.
+	\item[b) $N_x+2=N_y+2\geq 32$: ] Das Programm bildet Blöcke im Format $32$x$32$ und ordnet diese je nach Gesamtgröße des Gitters in einem quadratischen Grid an, dadurch ist die Größe des Grids auf Vielfache von $32$ beschränkt.
+\end{description}
+
+In der folgenden Tabelle ist der berechnete \emph{Speedup} aufgeführt. Aufgrund von Schwankungen zwischen verschiedenen Durchläufen des Programms wurden die Ergebnisse von jeweils 6 Programmdurchläufe mit denselben Parametern gemittelt. (Zur Übersichtlichkeit wurde auf die Angabe der Standardabweichung verzichtet. Die Schwankungen hielten sich in einem geringen Rahmen.)
+
+\subsubsection*{Speedup der zwei Funktionen \url{laplace_2d} und \url{vec_add} für die Ausführung auf der GPU vs. CPU}
+\begin{eqnarray} \nonumber
+	\begin{array}{l|c|c|c|c|c|c|c}
+ N_x=N_y & 8 & 16 & 32 & 64 & 128 & 256 & 512 \\ \hline
+ \mbox{laplace\_2d} & 0.04 & 0.11 & 0.43 & 1.67 & 0.92 & 3.62 & 10.5 \\
+ \mbox{vec\_add} & \sim 0 & 0.07 & 0.16 & 0.65 & 2.40 & 4.82 & 7.6
+	\end{array}
+\end{eqnarray}
+
+\section*{Anhänge}
+\begin{itemize}
+	\item Datei: \url{cg.cu} (Hauptprogramm)
+	\item Datei: \url{testlaplace.m} (Verifizierung der implementierten Funktion \url{laplace\_2d} mit der vorhandenen Matlab-Routine)
+	\item Datei: \url{ue3_verify.m} (Verifizierung der implementierten Methode der konjugierten Gradienten mit der vorhandenen Matlab-Routine)
+\end{itemize}
+\end{document}

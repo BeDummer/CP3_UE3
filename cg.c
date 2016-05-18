@@ -5,19 +5,6 @@
 #include <cuda_runtime.h>
 #include "common.h"
 
-// Macro zur Fehlerauswertung (CUDA)
-#define CHECK(call)                                                            \
-{                                                                              \
-    const cudaError_t error = call;                                            \
-    if (error != cudaSuccess)                                                  \
-    {                                                                          \
-        fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);                 \
-        fprintf(stderr, "code: %d, reason: %s\n", error,                       \
-                cudaGetErrorString(error));                                    \
-        exit(1);                                                               \
-    }                                                                          \
-}
-
 /*
    Globale Variablen stehen in allen Funktionen zur Verfuegung.
    Achtung: Das gilt *nicht* fuer Kernel-Funktionen!
@@ -228,13 +215,13 @@ int main(int argc, char **argv)
    print_vector("v",v,1);
 
   // Nullter Iterationsschritt
-	laplace_2d<<<1,(Nx+2,Ny+2)>>>(s,v);
+	laplace_2d<<<grid,block>>>(s,v);
 	print_vector("s",s,1); // Ausgabe fuer Aufgabe 3.1.1
 	
 	rnorm_alt = norm_sqr(v);
 	alpha = rnorm_alt/vec_scalar(s,v);
-	vec_add(x,x,alpha,v);
-	vec_add(r,v,(-alpha),s);
+	vec_add<<<grid,block>>>(x,x,alpha,v);
+	vec_add<<<grid,block>>>(r,v,(-alpha),s);
 	rnorm = norm_sqr(v);
 
 //test	print_vector("x",x,1);
@@ -244,13 +231,13 @@ int main(int argc, char **argv)
 	{
 //test		printf("Norm: %.4f \n",rnorm);
 		beta = rnorm/rnorm_alt;
-		vec_add(v,r, beta,v);
+		vec_add<<<grid,block>>>(v,r, beta,v);
 
 		rnorm_alt = rnorm;
-		laplace_2d(s,v);
+		laplace_2d<<<grid,block>>>(s,v);
 		alpha = vec_scalar(v,r)/vec_scalar(v,s);
-		vec_add(x,x,alpha,v);
-		vec_add(r,r,(-alpha),s);
+		vec_add<<<grid,block>>>(x,x,alpha,v);
+		vec_add<<<grid,block>>>(r,r,(-alpha),s);
 		rnorm = norm_sqr(r);
 
 		k++;
@@ -259,6 +246,13 @@ int main(int argc, char **argv)
 	printf("Anzahl Iterationen: %d \n",k);
 	print_vector("x",x,1);
 
+   // free device memory
+   CHECK(cudaFree(s_gpu));
+   CHECK(cudaFree(x_gpu));
+   CHECK(cudaFree(v_gpu));	
+   CHECK(cudaFree(r_gpu));	
+
+   // free host memory
    free(active);
    free(s);
    free(x);

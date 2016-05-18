@@ -1,3 +1,7 @@
+/* Programmaufruf mit 2 Argumenten:
+	1. Größe des Gitters (mit Rand): Nx+2 (= Ny+2)
+	2. Dimension eines Cuda-Blocks: dim_block (findet nur Anwendung, wenn Nx+2 > dim_block)
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -131,6 +135,7 @@ void print_vector(const char *name, double *p, int flag)
    printf("||%s|| = %.8f\n",name,sqrt(nrm));
 }
 
+// Matrix-Vektor-Multiplikation auf der CPU
 void laplace_2d(double *w, double *v)
 {
 	int i,j;
@@ -141,17 +146,19 @@ void laplace_2d(double *w, double *v)
 	}
 }
 
+// Matrix-Vektor-Multiplikation auf der GPU
 __global__ void laplace_2d_gpu(double *w, double *v, const int nx, const int ny)
 {
 	unsigned int ix = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int iy = threadIdx.y + blockIdx.y * blockDim.y;
-	if (ix>0 && ix<(nx+1) && iy>0 && iy<(ny+1))
+	if (ix>0 && ix<(nx+1) && iy>0 && iy<(ny+1)) // Bedingung, dass nur innere Punkte berechnet werden
 	{
 		unsigned int idx = iy*(blockDim.x * gridDim.x) + ix;
 		w[idx] = 4*v[idx] - (v[idx-1] + v[idx+1] + v[(idx-(gridDim.x*blockDim.x))] + v[(idx+(gridDim.x*blockDim.x))]);
 	}
 }
 
+// Skalarprodukt
 double vec_scalar(double *w, double *v)
 {
 	double scalar = .0;
@@ -161,6 +168,7 @@ double vec_scalar(double *w, double *v)
 	return scalar;
 }
 
+// benötigte Vektoraddition mit einem skalaren Faktor vor einem der Vektoren auf der CPU
 void vec_add(double *sum, double *w, double a, double *v)
 {
 	int i;
@@ -168,11 +176,12 @@ void vec_add(double *sum, double *w, double a, double *v)
 		sum[i] = w[i] + a*v[i];
 }
 
+// benötigte Vektoraddition mit einem skalaren Faktor vor einem der Vektoren auf der GPU
 __global__ void vec_add_gpu(double *sum, double *w, double a, double *v, const int nx, const int ny)
 {	
 	unsigned int ix = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int iy = threadIdx.y + blockIdx.y * blockDim.y;
-	if (ix>0 && ix<(nx+1) && iy>0 && iy<(ny+1))
+	if (ix>0 && ix<(nx+1) && iy>0 && iy<(ny+1)) // Bedingung, dass nur innere Punkte berechnet werden
 	{
 		unsigned int idx = iy*(blockDim.x * gridDim.x) + ix;
 		sum[idx] = w[idx] + a*v[idx];
@@ -190,7 +199,7 @@ int main(int argc, char **argv)
     printf("Using Device %d: %s\n", dev, deviceProp.name);
     CHECK(cudaSetDevice(dev));
     
-   int nBytes, k, kmax;
+   int nBytes, k, kmax, dim_block;
    double *s, *v, *x, *r, *v_backup;
    double tol;
    double rnorm, rnorm_alt, alpha, beta;
@@ -199,10 +208,12 @@ int main(int argc, char **argv)
    // Anzahl der Inneren Punkte in x- und y-Richtung
    Nx=8;
    Ny=8;
+   dim_block=8;
    if (argc>1)
    {
      sscanf(argv[1],"%d",&Nx);
-     if (Nx>32 && (Nx % 32 != 0))
+     sscanf(argv[2],"%d",&dim_block);
+     if (Nx>dim_block && (Nx % dim_block != 0))
      {
        printf("Die Eingabe (Nx+2) muss kleiner als 32 oder ein Vielfaches von 32 sein!\n");
        return (1);
@@ -301,8 +312,8 @@ int main(int argc, char **argv)
    
    // GPU-Blocks vorbereiten
    int bdim = Nx+2;
-   if ((Nx+2)>32 && (Ny+2)>32)
-     bdim = 32;
+   if ((Nx+2)>dim_block && (Ny+2)>dim_block)
+     bdim = dim_block;
    
      dim3 block(bdim,bdim);
      dim3 grid(((Nx+1+block.x)/block.x), ((Ny+1+block.y)/block.y));

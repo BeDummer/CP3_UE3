@@ -290,7 +290,7 @@ int main(int argc, char **argv)
    // GPU-Blocks vorbereiten
    int bdim = 32;
    dim3 block(bdim,bdim);
-   dim3 grid(ceil((Nx+2)/block.x), ceil((Ny+2)/block.y));
+   dim3 grid(((Nx+1+block.x)/block.x), ((Ny+1+block.y)/block.y));
 
    printf("Grid-Dim: %d x %d , Block-Dim: %d x %d \n", grid.x, grid.y,block.x,block.y);
    

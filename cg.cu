@@ -288,9 +288,17 @@ int main(int argc, char **argv)
    CHECK(cudaMalloc((void**)&r_gpu, nBytes));
    
    // GPU-Blocks vorbereiten
-   int bdim = 32;
-   dim3 block(bdim,bdim);
-   dim3 grid(((Nx+1+block.x)/block.x), ((Ny+1+block.y)/block.y));
+   const int bdim = 32;
+   if ((Nx+2)>bdim && (Ny+2)>bdim)
+   {
+     dim3 block(bdim,bdim);
+     dim3 grid(((Nx+1+block.x)/block.x), ((Ny+1+block.y)/block.y));
+   }
+   else
+   {
+     dim3 block(Nx+2,Ny+2);
+     dim3 grid(1);
+   }
 
    printf("Grid-Dim: %d x %d , Block-Dim: %d x %d \n", grid.x, grid.y,block.x,block.y);
    

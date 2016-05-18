@@ -292,6 +292,8 @@ int main(int argc, char **argv)
    dim3 block(bdim,bdim);
    dim3 grid(ceil((Nx+2)/block.x), ceil((Ny+2)/block.y));
 
+   printf("Grid-Dim: %d x %d , Block-Dim: %d x %d \n", grid.x, grid.y,block.x,block.y);
+   
    // GPU-Rechnungen fuer Aufgabe 3.2
    CHECK(cudaMemcpy(s_gpu, s, nBytes, cudaMemcpyHostToDevice));
    CHECK(cudaMemcpy(v_gpu, v, nBytes, cudaMemcpyHostToDevice));
@@ -299,11 +301,16 @@ int main(int argc, char **argv)
 
    iStart = seconds();
    laplace_2d_gpu<<<grid,block>>>(s_gpu,v_gpu,Nx,Ny);
+   CHECK(cudaDeviceSynchronize());
    const double time_laplace_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
    
    iStart = seconds();
    vec_add_gpu<<<grid,block>>>(r_gpu,v_gpu,(-alpha),s_gpu,Nx,Ny);
+   CHECK(cudaDeviceSynchronize());
    const double time_vec_add_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
+   
+   // check kernel error
+   CHECK(cudaGetLastError());
    
    CHECK(cudaMemcpy(s, s_gpu, nBytes, cudaMemcpyDeviceToHost));
    print_vector("s",s,1);

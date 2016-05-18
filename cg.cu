@@ -141,11 +141,11 @@ void laplace_2d(double *w, double *v)
 	}
 }
 
-__global__ void laplace_2d_gpu(double *w, double *v)
+__global__ void laplace_2d_gpu(double *w, double *v, const int nx, const int ny)
 {
 	unsigned int ix = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int iy = threadIdx.y + blockIdx.y * blockDim.y;
-	if (ix>0 && ix<(Nx+1) && iy>0 && iy<(Ny+1))
+	if (ix>0 && ix<(nx+1) && iy>0 && iy<(ny+1))
 	{
 		unsigned int idx = iy*(blockDim.x * gridDim.x) + ix;
 		w[idx] = 4*v[idx] - (v[idx-1] + v[idx+1] + v[(idx-(gridDim.x*blockDim.x))] + v[(idx+(gridDim.x*blockDim.x))]);
@@ -168,11 +168,11 @@ void vec_add(double *sum, double *w, double a, double *v)
 		sum[i] = w[i] + a*v[i];
 }
 
-__global__ void vec_add_gpu(double *sum, double *w, double a, double *v)
+__global__ void vec_add_gpu(double *sum, double *w, double a, double *v, const int nx, const int ny)
 {	
 	unsigned int ix = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int iy = threadIdx.y + blockIdx.y * blockDim.y;
-	if (ix>0 && ix<(Nx+1) && iy>0 && iy<(Ny+1))
+	if (ix>0 && ix<(nx+1) && iy>0 && iy<(ny+1))
 	{
 		unsigned int idx = iy*(blockDim.x * gridDim.x) + ix;
 		sum[idx] = w[idx] + a*v[idx];
@@ -281,7 +281,7 @@ int main(int argc, char **argv)
    random_vector(v);
    
    // Speicher auf GPU allozieren
-   __device__ double *s_gpu, *x_gpu, *v_gpu, *r_gpu;
+   double *s_gpu, *x_gpu, *v_gpu, *r_gpu;
    CHECK(cudaMalloc((void**)&s_gpu, nBytes));
    CHECK(cudaMalloc((void**)&x_gpu, nBytes));
    CHECK(cudaMalloc((void**)&v_gpu, nBytes));
@@ -298,11 +298,11 @@ int main(int argc, char **argv)
    CHECK(cudaMemcpy(r_gpu, r, nBytes, cudaMemcpyHostToDevice));
 
    iStart = seconds();
-   laplace_2d_gpu<<<grid,block>>>(s_gpu,v_gpu);
+   laplace_2d_gpu<<<grid,block>>>(s_gpu,v_gpu,Nx,Ny);
    const double time_laplace_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
    
    iStart = seconds();
-   vec_add_gpu<<<grid,block>>>(r_gpu,v_gpu,(-alpha),s_gpu);
+   vec_add_gpu<<<grid,block>>>(r_gpu,v_gpu,(-alpha),s_gpu,Nx,Ny);
    const double time_vec_add_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
    
    CHECK(cudaMemcpy(s, s_gpu, nBytes, cudaMemcpyDeviceToHost));

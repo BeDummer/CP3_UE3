@@ -202,9 +202,9 @@ int main(int argc, char **argv)
    if (argc>1)
    {
      sscanf(argv[1],"%d",&Nx);
-     if (Nx % 32 != 0)
+     if (Nx>32 && (Nx % 32 != 0))
      {
-       printf("Die Eingabe (Nx+2) muss ein Vielfaches von 32 sein!\n");
+       printf("Die Eingabe (Nx+2) muss kleiner als 32 oder ein Vielfaches von 32 sein!\n");
        return (1);
      }
      Nx -= 2;

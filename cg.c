@@ -139,7 +139,9 @@ __global__ void laplace_2d(double *w, double *v)
 		for (j=1; j<Ny+1; j++)
 			w[coord2index(i,j)] = 4*v[coord2index(i,j)] - (v[coord2index(i-1,j)]+v[coord2index(i+1,j)]+v[coord2index(i,j-1)]+v[coord2index(i,j+1)]);
 	}
-
+	unsigned int idx = threadIdx.x + blockIdx.x * blockDim.x + threadIdx.y * (blockDim.x * gridDim.x) + blockIdx.y * blockDim.y * blockDim.x * gridDim.x;
+	
+	w[idx] = 4*v[idx] - (v[coord2index(i-1,j)]+v[coord2index(i+1,j)]+v[coord2index(i,j-1)]+v[coord2index(i,j+1)]);
 }
 
 double vec_scalar(double *w, double *v)
@@ -196,11 +198,15 @@ int main(int argc, char **argv)
    memset(v, 0, nBytes);
 
    // Speicher auf GPU allozieren
-   double *s_gpu, *x_gpu, *v_gpu, *r_gpu;
-   CHECK(cudaMalloc((double**)&s_gpu, nBytes));
-   CHECK(cudaMalloc((double**)&x_gpu, nBytes));
-   CHECK(cudaMalloc((double**)&v_gpu, nBytes));
-   CHECK(cudaMalloc((double**)&r_gpu, nBytes));
+   __device__ double *s_gpu, *x_gpu, *v_gpu, *r_gpu;
+   CHECK(cudaMalloc((void**)&s_gpu, nBytes));
+   CHECK(cudaMalloc((void**)&x_gpu, nBytes));
+   CHECK(cudaMalloc((void**)&v_gpu, nBytes));
+   CHECK(cudaMalloc((void**)&r_gpu, nBytes));
+   
+   // GPU-Blocks vorbereiten
+   dim3 block(Nx+2,Ny+2);
+   dim3 grid(1);
    
    // Aktive Punkte ausgeben
    if ((Nx<=16)&&(Ny<=16))
@@ -222,7 +228,7 @@ int main(int argc, char **argv)
 	alpha = rnorm_alt/vec_scalar(s,v);
 	vec_add<<<grid,block>>>(x,x,alpha,v);
 	vec_add<<<grid,block>>>(r,v,(-alpha),s);
-	rnorm = norm_sqr(v);
+	rnorm = norm_sqr(r);
 
 //test	print_vector("x",x,1);
 

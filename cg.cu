@@ -191,7 +191,7 @@ int main(int argc, char **argv)
     CHECK(cudaSetDevice(dev));
     
    int nBytes, k, kmax;
-   double *s, *v, *x, *r;
+   double *s, *v, *x, *r, *v_backup;
    double tol;
    double rnorm, rnorm_alt, alpha, beta;
 
@@ -217,7 +217,8 @@ int main(int argc, char **argv)
    x=(double*)malloc(npts*sizeof(double));
    v=(double*)malloc(npts*sizeof(double));
    r=(double*)malloc(npts*sizeof(double));
- 
+   v_backup=(double*)malloc(npts*sizeof(double));
+
    // auf Null setzen
    memset(s, 0, nBytes);
    memset(x, 0, nBytes);
@@ -235,7 +236,8 @@ int main(int argc, char **argv)
    // Zufaelliger Vektor
    random_vector(v);
    print_vector("v",v,1);
-
+   memcpy(v_backup,v,nBytes);
+   
   // Nullter Iterationsschritt
 	double iStart = seconds();
 	laplace_2d(s,v);
@@ -244,6 +246,7 @@ int main(int argc, char **argv)
 	
 	rnorm_alt = norm_sqr(v);
 	alpha = rnorm_alt/vec_scalar(s,v);
+	const double alpha_backup = alpha;
 	vec_add(x,x,alpha,v);
 	iStart = seconds();
 	vec_add(r,v,(-alpha),s);
@@ -275,10 +278,7 @@ int main(int argc, char **argv)
    // auf Null setzen
    memset(s, 0, nBytes);
    memset(x, 0, nBytes);
-   memset(v, 0, nBytes);
    memset(r, 0, nBytes);
-
-   random_vector(v);
    
    // Speicher auf GPU allozieren
    double *s_gpu, *x_gpu, *v_gpu, *r_gpu;
@@ -301,7 +301,7 @@ int main(int argc, char **argv)
    
    // GPU-Rechnungen fuer Aufgabe 3.2
    CHECK(cudaMemcpy(s_gpu, s, nBytes, cudaMemcpyHostToDevice));
-   CHECK(cudaMemcpy(v_gpu, v, nBytes, cudaMemcpyHostToDevice));
+   CHECK(cudaMemcpy(v_gpu, v_backup, nBytes, cudaMemcpyHostToDevice));
    CHECK(cudaMemcpy(r_gpu, r, nBytes, cudaMemcpyHostToDevice));
 
    iStart = seconds();
@@ -310,7 +310,7 @@ int main(int argc, char **argv)
    const double time_laplace_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
    
    iStart = seconds();
-   vec_add_gpu<<<grid,block>>>(r_gpu,v_gpu,(-alpha),s_gpu,Nx,Ny);
+   vec_add_gpu<<<grid,block>>>(r_gpu,v_gpu,(-alpha_backup),s_gpu,Nx,Ny);
    CHECK(cudaDeviceSynchronize());
    const double time_vec_add_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
    
@@ -335,6 +335,7 @@ int main(int argc, char **argv)
    free(x);
    free(v);
    free(r);
+   free(v_backup);
 
    // reset device
    CHECK(cudaDeviceReset());

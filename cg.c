@@ -131,15 +131,18 @@ void print_vector(char *name, double *p, int flag)
    printf("||%s|| = %.8f\n",name,sqrt(nrm));
 }
 
-__global__ void laplace_2d_gpu(double *w, double *v)
+void laplace_2d(double *w, double *v)
 {
-/*	int i,j;
+	int i,j;
 	for (i=1; i<Nx+1; i++)
 	{
 		for (j=1; j<Ny+1; j++)
 			w[coord2index(i,j)] = 4*v[coord2index(i,j)] - (v[coord2index(i-1,j)]+v[coord2index(i+1,j)]+v[coord2index(i,j-1)]+v[coord2index(i,j+1)]);
 	}
-*/
+}
+
+__global__ void laplace_2d_gpu(double *w, double *v)
+{
 	unsigned int ix = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int iy = threadIdx.y + blockIdx.y * blockDim.y;
 	if (ix>0 && ix<(Nx+1) && iy>0 && iy<(Ny+1))
@@ -158,12 +161,15 @@ double vec_scalar(double *w, double *v)
 	return scalar;
 }
 
-__global__ void vec_add_gpu(double *sum, double *w, double a, double *v)
+void vec_add(double *sum, double *w, double a, double *v)
 {
-/*	int i;
+	int i;
 	for (i=0; i<npts; i++)
 		sum[i] = w[i] + a*v[i];
-*/	
+}
+
+__global__ void vec_add_gpu(double *sum, double *w, double a, double *v)
+{	
 	unsigned int ix = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int iy = threadIdx.y + blockIdx.y * blockDim.y;
 	if (ix>0 && ix<(Nx+1) && iy>0 && iy<(Ny+1))
@@ -285,11 +291,11 @@ int main(int argc, char **argv)
    CHECK(cudaMemcpy(r_gpu, r, nBytes, cudaMemcpyHostToDevice));
 
    iStart = seconds();
-   laplace_2d_gpu<<<grid,block>>>(s,v);
+   laplace_2d_gpu<<<grid,block>>>(s_gpu,v_gpu);
    const double time_laplace_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
    
    iStart = seconds();
-   vec_add_gpu<<<grid,block>>>(r,v,(-alpha),s);
+   vec_add_gpu<<<grid,block>>>(r_gpu,v_gpu,(-alpha),s_gpu);
    const double time_vec_add_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
    
    printf("\n Speedup Laplace: %.4f \n",(time_laplace_host/time_laplace_gpu));

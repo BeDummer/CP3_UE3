@@ -183,6 +183,13 @@ int main(int argc, char **argv)
 {
    printf("%s Starting...\n", argv[0]);
 
+   // set up device
+    int dev = 0;
+    cudaDeviceProp deviceProp;
+    CHECK(cudaGetDeviceProperties(&deviceProp, dev));
+    printf("Using Device %d: %s\n", dev, deviceProp.name);
+    CHECK(cudaSetDevice(dev));
+    
    int nBytes, k, kmax;
    double *s, *v, *x, *r;
    double tol;
@@ -298,6 +305,9 @@ int main(int argc, char **argv)
    vec_add_gpu<<<grid,block>>>(r_gpu,v_gpu,(-alpha),s_gpu);
    const double time_vec_add_gpu = seconds() - iStart; // Zeitmessung fuer 3.2
    
+   CHECK(cudaMemcpy(s, s_gpu, nBytes, cudaMemcpyDeviceToHost));
+   print_vector("s",s,1);
+   
    printf("\n Speedup Laplace: %.4f \n",(time_laplace_host/time_laplace_gpu));
    printf("Speedup Vec_add: %.4f \n",(time_vec_add_host/time_vec_add_gpu));
 
@@ -313,6 +323,9 @@ int main(int argc, char **argv)
    free(x);
    free(v);
    free(r);
+
+   // reset device
+   CHECK(cudaDeviceReset());
 
    return (0);
 }

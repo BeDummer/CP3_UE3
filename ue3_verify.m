@@ -1,6 +1,7 @@
 % CG Methode zur Loesung einer Laplacegleichung der Form Ax = b
+% nutzen wir um den Loesungvektor x0 mit dem aus cg.c zu vergleichen
 
-% definiere Grid Gr��e
+% definiere Grid Groessse
 
 N=8;
 

@@ -202,8 +202,15 @@ int main(int argc, char **argv)
    if (argc>1)
    {
      sscanf(argv[1],"%d",&Nx);
+     if (Nx % 32 != 0)
+     {
+       printf("Die Eingabe (Nx+2) muss ein Vielfaches von 32 sein!\n");
+       return (1);
+     }
+     Nx -= 2;
      Ny = Nx;
    }
+   
    // Gesamtanzahl der Gitterpunkte
    npts=(Nx+2)*(Ny+2);
    // Aktive Punkte - Array
@@ -293,14 +300,12 @@ int main(int argc, char **argv)
    CHECK(cudaMalloc((void**)&r_gpu, nBytes));
    
    // GPU-Blocks vorbereiten
-   const int bdim = 32;
-   dim3 block(Nx+2,Ny+2);
-   dim3 grid(1);
-   if ((Nx+2)>bdim && (Ny+2)>bdim)
-   {
+   int bdim = Nx+2;
+   if ((Nx+2)>32 && (Ny+2)>32)
+     bdim = 32;
+   
      dim3 block(bdim,bdim);
      dim3 grid(((Nx+1+block.x)/block.x), ((Ny+1+block.y)/block.y));
-   }
 
    printf("\n GPU-Berechnung\n Grid-Dim: %d x %d , Block-Dim: %d x %d \n", grid.x, grid.y,block.x,block.y);
    

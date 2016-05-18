@@ -293,8 +293,8 @@ int main(int argc, char **argv)
    dim3 grid(1);
    if ((Nx+2)>bdim && (Ny+2)>bdim)
    {
-     block(bdim,bdim);
-     grid(((Nx+1+block.x)/block.x), ((Ny+1+block.y)/block.y));
+     dim3 block(bdim,bdim);
+     dim3 grid(((Nx+1+block.x)/block.x), ((Ny+1+block.y)/block.y));
    }
 
    printf("Grid-Dim: %d x %d , Block-Dim: %d x %d \n", grid.x, grid.y,block.x,block.y);

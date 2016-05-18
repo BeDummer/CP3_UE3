@@ -102,7 +102,7 @@ double norm_sqr(double *v)
    Der Vektor p wird als 2D Gitter fuer i,j<=16 ausgegeben. Es werden innere/aktive
    und, falls flag>0, auch die aeusseren Punkte ausgegeben.
 */
-void print_vector(char *name, double *p, int flag)
+void print_vector(const char *name, double *p, int flag)
 {
    int i,j,idx;
    double nrm;

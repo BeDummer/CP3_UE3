@@ -59,7 +59,7 @@ while k < kmax
     
     if r0'*r0 < tol                             % falls schon gew�nschte tol erreicht, dann:
      
-        fprintf('ich habe fertig! x = x0\n')    % Ausgabetext
+        fprintf('ich habe fertig! \n')    % Ausgabetext
         x0
         break
     end
@@ -74,6 +74,6 @@ while k < kmax
 end
 
 
-fprintf('ich habe fertig! x = x0\n')    % Ausgabetext
+fprintf('Ende\n')    % Ausgabetext
 x0
 

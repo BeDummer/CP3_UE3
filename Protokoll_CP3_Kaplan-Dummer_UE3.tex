@@ -14,6 +14,8 @@
 
 \begin{document}
 \maketitle
+Online-Version: \href{https://www.github.com/BeDummer/CP3_UE3}{\url{https://www.github.com/BeDummer/CP3_UE3}}
+
 \section*{Aufgabe 3.1}
 Die entsprechenden Funktionen wurden in der gegebenen Datei \url{cg.c} ergänzt. Zur Überprüfung der implementierten Funktion \url{laplace\_2d} wurde die Matlab-Routine \url{testlaplace.m} genutzt. Hier wurde der \glqq zufällige \grqq (aber immer gleiche) Vektor des C-Programms in die Matlab-Routine kopiert und die beiden Ergebnisse wurden verglichen. Es war festzustellen, dass die implementierte Funktion korrekt arbeitet.
 Ähnlich wurde für die Verifizierung der gesamten Methode vorgegangen. Hierfür wurde die Matlab-Routine \url{ue3_verify.m} genutzt. Wobei auch hier der Vektor des C-Programms in die Matlab-Routine kopiert wurde und die beiden Ergebnisse verglichen wurden. Auch die Methode der konjugierten Gradienten konnte korrekt implementiert werden.
@@ -21,22 +23,33 @@ Die entsprechenden Funktionen wurden in der gegebenen Datei \url{cg.c} ergänzt.
 \section*{Aufgabe 3.2}
 In der beigefügten Datei \url{cg.cu} wurden die Kernel-Funktionen \url{laplace_2d_gpu} und \url{vec_add_gpu} für die (Host-)Funktionen \url{laplace_2d} und \url{vec_add} implementiert und eine Berechnung der Laufzeit durchgeführt. 
 
-Die Einteilung der Blockstruktur wurde in 2 Fälle geteilt:
+Die Einteilung der Blockstruktur wurde in 2 Varianten untersucht:
 \begin{description}
-	\item[a) $N_x+2=N_y+2<32$: ] Das Programm bildet einen Block in Größe des Gitters. Die Größe ist in diesem Bereich frei wählbar.
-	\item[b) $N_x+2=N_y+2\geq 32$: ] Das Programm bildet Blöcke im Format $32$x$32$ und ordnet diese je nach Gesamtgröße des Gitters in einem quadratischen Grid an, dadurch ist die Größe des Grids auf Vielfache von $32$ beschränkt.
+	\item[a) $8$x$8$-Blöcke: ] Das Programm bildet Blöcke im Format $8$x$8$ und ordnet diese je nach Gesamtgröße des Gitters in einem quadratischen Grid an, dadurch ist die Größe des Grids auf Vielfache von $8$ beschränkt.
+	\item[b) $32$x$32$-Blöcke: ] Das Programm bildet Blöcke im Format $32$x$32$ und ordnet diese je nach Gesamtgröße des Gitters in einem quadratischen Grid an, dadurch ist die Größe des Grids auf Vielfache von $32$ beschränkt.
 \end{description}
 
-In der folgenden Tabelle ist der berechnete \emph{Speedup} aufgeführt. Aufgrund von Schwankungen zwischen verschiedenen Durchläufen des Programms wurden die Ergebnisse von jeweils 6 Programmdurchläufe mit denselben Parametern gemittelt. (Zur Übersichtlichkeit wurde auf die Angabe der Standardabweichung verzichtet. Die Schwankungen hielten sich in einem geringen Rahmen.)
+In den folgenden Tabellen ist der berechnete \emph{Speedup} aufgeführt. Aufgrund von Schwankungen zwischen verschiedenen Durchläufen des Programms wurden die Ergebnisse von jeweils 6 Programmdurchläufe mit denselben Parametern gemittelt. (Zur Übersichtlichkeit wurde auf die Angabe der Standardabweichung verzichtet. Die Schwankungen hielten sich in einem geringen Rahmen.)
 
-\subsubsection*{Speedup der zwei Funktionen \url{laplace_2d} und \url{vec_add} für die Ausführung auf der GPU vs. CPU}
+\subsubsection*{Speedup der zwei Funktionen \url{laplace_2d} und \url{vec_add} für die Ausführung auf der GPU vs. CPU mit $8$x$8$ Blöcken}
 \begin{eqnarray} \nonumber
 	\begin{array}{l|c|c|c|c|c|c|c}
- N_x=N_y & 8 & 16 & 32 & 64 & 128 & 256 & 512 \\ \hline
- \mbox{laplace\_2d} & 0.04 & 0.11 & 0.43 & 1.67 & 0.92 & 3.62 & 10.5 \\
- \mbox{vec\_add} & \sim 0 & 0.07 & 0.16 & 0.65 & 2.40 & 4.82 & 7.6
+ N_x+2=N_y+2 & 8 & 16 & 32 & 64 & 128 & 256 & 512 \\ \hline
+ \mbox{laplace\_2d} & 0.03 & 0.1 & 0.46 & 1.71 & 0.92 & 3.62 & 9.31 \\
+ \mbox{vec\_add} & 0.05 & 0.07 & 0.17 & 0.68 & 2.25 & 4.32 & 6.55
 	\end{array}
 \end{eqnarray}
+
+\subsubsection*{Speedup der zwei Funktionen \url{laplace_2d} und \url{vec_add} für die Ausführung auf der GPU vs. CPU mit $32$x$32$ Blöcken}
+\begin{eqnarray} \nonumber
+	\begin{array}{l|c|c|c|c|c}
+ N_x+2=N_y+2 & 32 & 64 & 128 & 256 & 512 \\ \hline
+ \mbox{laplace\_2d} & 0.43 & 1.67 & 0.92 & 3.62 & 10.5 \\
+ \mbox{vec\_add} & 0.16 & 0.65 & 2.40 & 4.82 & 7.6
+	\end{array}
+\end{eqnarray}
+
+Es gibt nur geringfügige Unterschiede beim Speedup zwischen den 2 Blockgrößen, welche im Rahmen der statistischen Schwankungen liegen. Auffällig ist, dass sich für die Funktion \url{vec\_add} ein monotoner Anstieg des Speedups mit der Gittergröße ergibt, wobei für die Funktion \url{laplace\_2d} ein lokales Minimum bei $N_x+2=N_y+2=128$ in der Messreihe existiert. Hier scheinen verschiedene Komponenten zu konkurrieren, eine Analyse mit \url{nvprof} könnte genauere Hinweise liefern.
 
 \section*{Anhänge}
 \begin{itemize}
